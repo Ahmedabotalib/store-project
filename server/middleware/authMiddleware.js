@@ -4,28 +4,50 @@ const authMiddleware = (req, res, next) => {
 
   try {
 
+    // GET TOKEN
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
 
       return res.status(401).json({
-        message: "No Token Provided",
+        message: "Access Denied",
       });
 
     }
 
+    // FORMAT:
+    // Bearer TOKEN
+
     const token = authHeader.split(" ")[1];
 
-    const decoded = jwt.verify(token, "SECRET_KEY");
+    if (!token) {
 
-    req.user = decoded;
+      return res.status(401).json({
+        message: "Invalid Token",
+      });
+
+    }
+
+    // VERIFY TOKEN
+
+    const verified = jwt.verify(
+      token,
+      "SECRET_KEY"
+    );
+
+    // SAVE USER DATA
+
+    req.user = verified;
 
     next();
 
   } catch (error) {
 
-    return res.status(401).json({
-      message: "Invalid Token",
+    console.log(error);
+
+    res.status(401).json({
+      message: "Unauthorized",
     });
 
   }

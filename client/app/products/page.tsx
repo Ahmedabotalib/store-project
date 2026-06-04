@@ -2,28 +2,43 @@
 
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { useEffect, useState } from "react";
+import api from "@/services/api";
 
 export default function ProductsPage() {
 
   const [products, setProducts] = useState<any[]>([]);
-
-  // FETCH PRODUCTS
+  const [loading, setLoading] = useState(true);
+  
 
   const fetchProducts = async () => {
 
     try {
 
-      const response = await fetch(
-        "http://localhost:5000/products"
+      setLoading(true);
+
+      const token = localStorage.getItem("token");
+
+     const response = await api.get("/products");
+
+const data = response.data;
+
+      console.log("Products API Response:", data);
+
+      setProducts(
+        Array.isArray(data)
+          ? data
+          : []
       );
-
-      const data = await response.json();
-
-      setProducts(data);
 
     } catch (error) {
 
       console.error(error);
+
+      setProducts([]);
+
+    } finally {
+
+      setLoading(false);
 
     }
 
@@ -35,11 +50,25 @@ export default function ProductsPage() {
 
   }, []);
 
+  if (loading) {
+
+    return (
+
+      <DashboardLayout>
+
+        <p className="text-white text-xl">
+          Loading Products...
+        </p>
+
+      </DashboardLayout>
+
+    );
+
+  }
+
   return (
 
     <DashboardLayout>
-
-      {/* HEADER */}
 
       <div className="flex items-center justify-between mb-8">
 
@@ -63,8 +92,6 @@ export default function ProductsPage() {
         </a>
 
       </div>
-
-      {/* TABLE */}
 
       <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800">
 
@@ -104,80 +131,85 @@ export default function ProductsPage() {
 
           <tbody>
 
-            {products.map((product) => (
+            {products.length === 0 ? (
 
-              <tr
-                key={product.id}
-                className="border-t border-zinc-800 hover:bg-zinc-800/40 transition"
-              >
+              <tr>
 
-                {/* PRODUCT */}
-
-                <td className="p-5">
-
-                  <div className="flex items-center gap-4">
-
-                    <div className="w-14 h-14 rounded-xl bg-zinc-700"></div>
-
-                    <div>
-
-                      <h3 className="font-semibold">
-                        {product.name}
-                      </h3>
-
-                      <p className="text-zinc-400 text-sm">
-                        {product.color}
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                </td>
-
-                {/* CATEGORY */}
-
-                <td className="p-5">
-                  {product.category}
-                </td>
-
-                {/* SIZE */}
-
-                <td className="p-5">
-                  {product.size}
-                </td>
-
-                {/* STATUS */}
-
-                <td className="p-5">
-
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      product.status === "Available"
-                        ? "bg-green-500/20 text-green-400"
-                        : "bg-yellow-500/20 text-yellow-400"
-                    }`}
-                  >
-                    {product.status}
-                  </span>
-
-                </td>
-
-                {/* RENTAL PRICE */}
-
-                <td className="p-5">
-                  {product.rentalPrice} EGP
-                </td>
-
-                {/* STOCK */}
-
-                <td className="p-5">
-                  {product.stock}
+                <td
+                  colSpan={6}
+                  className="p-5 text-center text-zinc-400"
+                >
+                  No Products Found
                 </td>
 
               </tr>
 
-            ))}
+            ) : (
+
+              products.map((product) => (
+
+                <tr
+                  key={product.id}
+                  className="border-t border-zinc-800 hover:bg-zinc-800/40 transition"
+                >
+
+                  <td className="p-5">
+
+                    <div className="flex items-center gap-4">
+
+                      <div className="w-14 h-14 rounded-xl bg-zinc-700"></div>
+
+                      <div>
+
+                        <h3 className="font-semibold">
+                          {product.name}
+                        </h3>
+
+                        <p className="text-zinc-400 text-sm">
+                          {product.color}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                  </td>
+
+                  <td className="p-5">
+                    {product.category}
+                  </td>
+
+                  <td className="p-5">
+                    {product.size}
+                  </td>
+
+                  <td className="p-5">
+
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm ${
+                        product.status === "Available"
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-yellow-500/20 text-yellow-400"
+                      }`}
+                    >
+                      {product.status}
+                    </span>
+
+                  </td>
+
+                  <td className="p-5">
+                    {product.rentalPrice} EGP
+                  </td>
+
+                  <td className="p-5">
+                    {product.stock}
+                  </td>
+
+                </tr>
+
+              ))
+
+            )}
 
           </tbody>
 
@@ -188,4 +220,5 @@ export default function ProductsPage() {
     </DashboardLayout>
 
   );
+
 }

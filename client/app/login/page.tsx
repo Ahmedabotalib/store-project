@@ -1,4 +1,86 @@
+"use client";
+
+import { useState } from "react";
+
+import api from "@/services/api";
+
+import { useRouter } from "next/navigation";
+
 export default function LoginPage() {
+
+  const router = useRouter();
+
+  const [formData, setFormData] = useState({
+
+    email: "",
+    password: "",
+
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+
+    setFormData({
+
+      ...formData,
+
+      [e.target.name]: e.target.value,
+
+    });
+
+  };
+
+  const handleLogin = async (
+    e: React.FormEvent
+  ) => {
+
+    e.preventDefault();
+
+    try {
+
+      setLoading(true);
+
+      const response = await api.post(
+        "/auth/login",
+        formData
+      );
+
+      // SAVE TOKEN
+
+      localStorage.setItem(
+        "token",
+        response.data.token
+      );
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(response.data.user)
+      );
+
+      alert("Login Successful");
+
+      router.push("/dashboard");
+
+    } catch (error: any) {
+
+      console.log(error);
+
+      alert(
+        error.response?.data?.message ||
+        "Login Failed"
+      );
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  };
+
   return (
 
     <main className="min-h-screen bg-black flex items-center justify-center">
@@ -13,7 +95,10 @@ export default function LoginPage() {
           Login to your dashboard
         </p>
 
-        <form className="space-y-5">
+        <form
+          onSubmit={handleLogin}
+          className="space-y-5"
+        >
 
           {/* EMAIL */}
 
@@ -25,7 +110,10 @@ export default function LoginPage() {
 
             <input
               type="email"
+              name="email"
               placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
               className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white outline-none focus:border-white"
             />
 
@@ -41,7 +129,10 @@ export default function LoginPage() {
 
             <input
               type="password"
+              name="password"
               placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleChange}
               className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white outline-none focus:border-white"
             />
 
@@ -50,9 +141,17 @@ export default function LoginPage() {
           {/* BUTTON */}
 
           <button
+            type="submit"
+            disabled={loading}
             className="w-full bg-white text-black py-3 rounded-xl font-semibold hover:opacity-90 transition"
           >
-            Login
+
+            {
+              loading
+                ? "Loading..."
+                : "Login"
+            }
+
           </button>
 
         </form>
@@ -62,4 +161,5 @@ export default function LoginPage() {
     </main>
 
   );
+
 }

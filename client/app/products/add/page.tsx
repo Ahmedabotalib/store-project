@@ -54,6 +54,7 @@ export default function AddProductPage() {
   // HANDLE SUBMIT
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log(formData);
 
   e.preventDefault();
 

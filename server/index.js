@@ -31,128 +31,137 @@ app.get("/", (req, res) => {
 
 /* GET PRODUCTS */
 
-app.get("/products", async (req, res) => {
+app.get(
+  "/products",
+  authMiddleware,
+  async (req, res) => {
 
-  try {
+    try {
 
-    const products = await prisma.product.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+      const products = await prisma.product.findMany({
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
-    res.json(products);
+      res.json(products);
 
-  } catch (error) {
+    } catch (error) {
 
-    console.log(error);
+      console.log(error);
 
-    res.status(500).json({
-      message: "Server Error",
-    });
+      res.status(500).json({
+        message: "Server Error",
+      });
+
+    }
 
   }
+);
 
-});
+/* ADD PRODUCT */
+
 app.post(
   "/products",
   authMiddleware,
   adminMiddleware,
   async (req, res) => {
 
-  try {
+    try {
 
-    const {
-      name,
-      category,
-      size,
-      color,
-      salePrice,
-      rentalPrice,
-      stock,
-      status,
-    } = req.body;
-
-    const newProduct = await prisma.product.create({
-
-      data: {
-
+      const {
         name,
-
         category,
-
         size,
-
         color,
-
-        salePrice: Number(salePrice),
-
-        rentalPrice: Number(rentalPrice),
-
-        stock: Number(stock),
-
+        salePrice,
+        rentalPrice,
+        stock,
         status,
+      } = req.body;
+      console.log(req.body);
 
-      },
+      const newProduct = await prisma.product.create({
 
-    });
+        data: {
 
-    res.status(201).json({
+          name,
 
-      message: "Product Added Successfully",
+          category,
 
-      product: newProduct,
+          size,
 
-    });
+          color,
 
-  } catch (error) {
+          salePrice: Number(salePrice),
 
-    console.log(error);
+          rentalPrice: Number(rentalPrice),
 
-    res.status(500).json({
-      message: "Server Error",
-    });
+          stock: Number(stock),
+
+          status,
+
+        },
+
+      });
+
+      res.status(201).json({
+
+        message: "Product Added Successfully",
+
+        product: newProduct,
+
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+        message: "Server Error",
+      });
+
+    }
 
   }
-
-});
+);
 
 /* DELETE PRODUCT */
+
 app.delete(
   "/products/:id",
   authMiddleware,
   adminMiddleware,
   async (req, res) => {
 
-  try {
+    try {
 
-    const productId = Number(req.params.id);
+      const productId = Number(req.params.id);
 
-    await prisma.product.delete({
+      await prisma.product.delete({
 
-      where: {
-        id: productId,
-      },
+        where: {
+          id: productId,
+        },
 
-    });
+      });
 
-    res.json({
-      message: "Product Deleted Successfully",
-    });
+      res.json({
+        message: "Product Deleted Successfully",
+      });
 
-  } catch (error) {
+    } catch (error) {
 
-    console.log(error);
+      console.log(error);
 
-    res.status(500).json({
-      message: "Server Error",
-    });
+      res.status(500).json({
+        message: "Server Error",
+      });
+
+    }
 
   }
-
-});
-
-
+);
 const PORT = 5000;
 
 app.listen(PORT, () => {
