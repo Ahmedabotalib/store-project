@@ -54,6 +54,10 @@ export default function LoginPage() {
         "token",
         response.data.token
       );
+localStorage.setItem(
+  "role",
+  response.data.user.role
+);
 
       localStorage.setItem(
         "user",
@@ -62,8 +66,11 @@ export default function LoginPage() {
 
       alert("Login Successful");
 
-      router.push("/dashboard");
-
+if (response.data.user.role === "SuperAdmin") {
+  router.push("/super-admin");
+} else {
+  router.push("/dashboard");
+}
     } catch (error: any) {
 
       console.log(error);

@@ -13,12 +13,14 @@ const register = async (req, res) => {
 
   try {
 
-    const {
-      name,
-      email,
-      password,
-      role,
-    } = req.body;
+  const{
+name,
+email,
+password,
+role,
+storeName,
+phone
+}=req.body;
 
     // CHECK USER EXISTS
 
@@ -44,39 +46,91 @@ const register = async (req, res) => {
 
     // CREATE USER
 
-    const user = await prisma.user.create({
+    let store = await prisma.store.findFirst();
 
-      data: {
 
-        name,
+if(!store){
 
-        email,
+store = await prisma.store.create({
 
-        password: hashedPassword,
+data:{
 
-        role: role || "Employee",
+name:"بدلتك",
 
-      },
+subscriptionEnd:new Date(
 
-    });
+Date.now()+365*24*60*60*1000
+
+)
+
+}
+
+});
+
+}
+const Store = await prisma.store.create({
+
+data:{
+
+name:storeName,
+
+phone,
+
+subscriptionEnd:new Date(
+
+Date.now()+30*24*60*60*1000
+
+)
+
+}
+
+});
+
+
+const user = await prisma.user.create({
+
+data:{
+
+name,
+
+email,
+
+password:hashedPassword,
+
+role: role || "Admin",
+
+storeId: Store.id
+
+},
+
+});
 
     // GENERATE TOKEN
 
     const token = jwt.sign(
 
-      {
-        userId: user.id,
-        role: user.role,
-      },
+{
 
-      "SECRET_KEY",
+userId: user.id,
+role: user.role,
+storeId: user.storeId
 
-      {
-        expiresIn: "7d",
-      }
+},
 
-    );
+"SECRET_KEY",
 
+{
+expiresIn:"7d"
+}
+
+);
+console.log("===== LOGIN USER =====");
+console.log(user);
+console.log("TOKEN PAYLOAD:", {
+  userId: user.id,
+  role: user.role,
+  storeId: user.storeId
+});
     res.status(201).json({
 
       message: "User Registered Successfully",
@@ -120,13 +174,17 @@ const login = async (req, res) => {
 
     // CHECK USER
 
-    const user = await prisma.user.findUnique({
+ const user = await prisma.user.findUnique({
 
-      where: {
-        email,
-      },
+  where: {
+    email,
+  },
 
-    });
+  include: {
+    store: true,
+  },
+
+});
 
     if (!user) {
 
@@ -155,18 +213,21 @@ const login = async (req, res) => {
 
     const token = jwt.sign(
 
-      {
-        userId: user.id,
-        role: user.role,
-      },
+{
 
-      "SECRET_KEY",
+userId:user.id,
+role:user.role,
+storeId:user.storeId
 
-      {
-        expiresIn: "7d",
-      }
+},
 
-    );
+"SECRET_KEY",
+
+{
+expiresIn:"7d"
+}
+
+);
 
     res.json({
 
@@ -176,12 +237,16 @@ const login = async (req, res) => {
 
       user: {
 
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
 
-      },
+  storeId: user.storeId,
+
+  store: user.store,
+
+}
 
     });
 

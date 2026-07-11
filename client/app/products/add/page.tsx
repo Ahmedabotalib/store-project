@@ -3,18 +3,25 @@
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { useState } from "react";
 
-export default function AddProductPage() {
 
-  const [formData, setFormData] = useState({
-    name: "",
-    category: "",
-    size: "",
-    color: "",
-    salePrice: "",
-    rentalPrice: "",
-    stock: "",
-    status: "Available",
-  });
+export default function AddProductPage() {
+const [imageFile, setImageFile] = useState<File | null>(null);
+const [formData,setFormData]=useState({
+
+name:"",
+category:"",
+size:"",
+color:"",
+
+salePrice:"",
+rentalPrice:"",
+
+type:"SELL",
+
+stock:"",
+status:"Available"
+
+})
 
   // 1- IMAGE PREVIEW STATE
 
@@ -26,39 +33,139 @@ export default function AddProductPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
 
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+   if (e.target.name === "type") {
 
+setFormData({
+
+...formData,
+
+type:e.target.value,
+
+salePrice:
+e.target.value==="SELL"
+? formData.salePrice
+: "",
+
+rentalPrice:
+e.target.value==="RENT"
+? formData.rentalPrice
+: ""
+
+});
+
+return;
+
+}
+
+
+setFormData({
+
+...formData,
+
+[e.target.name]:e.target.value
+
+});
   };
 
   // 2- HANDLE IMAGE CHANGE
 
   const handleImageChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
 
-    const file = e.target.files?.[0];
+  const file = e.target.files?.[0];
 
-    if (file) {
+  if (file) {
 
-      const imageUrl = URL.createObjectURL(file);
+    setImageFile(file);
 
-      setImagePreview(imageUrl);
+    const imageUrl = URL.createObjectURL(file);
 
-    }
+    setImagePreview(imageUrl);
 
-  };
+  }
 
+};
   // HANDLE SUBMIT
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    console.log(formData);
+const handleSubmit = async (e: React.FormEvent) => {
 
   e.preventDefault();
 
   try {
+if (
+  !formData.name.trim() ||
+  !formData.category.trim() ||
+  !formData.size.trim() ||
+  !formData.color.trim() ||
+  !formData.stock ||
+  !imageFile
+) {
+
+  alert("Please fill all fields");
+
+  return;
+
+}
+if(
+
+formData.type==="SELL"
+
+&&
+
+!formData.salePrice
+
+){
+
+alert(
+
+"Sale Price Required"
+
+);
+
+return;
+
+}
+
+
+
+if(
+
+formData.type==="RENT"
+
+&&
+
+!formData.rentalPrice
+
+){
+
+alert(
+
+"Rental Price Required"
+
+);
+
+return;
+
+}
+    const token = localStorage.getItem("token");
+
+    const form = new FormData();
+    form.append("type",formData.type);
+    form.append("name", formData.name);
+    form.append("category", formData.category);
+    form.append("size", formData.size);
+    form.append("color", formData.color);
+    form.append("salePrice", formData.salePrice);
+    form.append("rentalPrice", formData.rentalPrice);
+    form.append("stock", formData.stock);
+    form.append("status", formData.status);
+
+    if (imageFile) {
+
+      form.append("image", imageFile);
+
+    }
 
     const response = await fetch(
       "http://localhost:5000/products",
@@ -66,32 +173,44 @@ export default function AddProductPage() {
         method: "POST",
 
         headers: {
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
 
-        body: JSON.stringify(formData),
+        body: form,
       }
     );
 
     const data = await response.json();
 
-    console.log(data);
+    console.log("RESPONSE:", data);
+
+    if (!response.ok) {
+
+      return alert(data.message);
+
+    }
 
     alert("Product Added Successfully");
 
-    // RESET FORM
-
     setFormData({
-      name: "",
-      category: "",
-      size: "",
-      color: "",
-      salePrice: "",
-      rentalPrice: "",
-      stock: "",
-      status: "Available",
+ name:"",
+category:"",
+size:"",
+color:"",
+
+
+salePrice:"",
+rentalPrice:"",
+
+
+type:"SELL",
+
+
+stock:"",
+status:"Available"
     });
 
+    setImageFile(null);
     setImagePreview(null);
 
   } catch (error) {
@@ -167,6 +286,46 @@ export default function AddProductPage() {
             />
 
           </div>
+          {/* TYPE */}
+          <div>
+
+<label className="block mb-2">
+
+Product Type
+
+</label>
+
+
+<select
+
+name="type"
+
+value={formData.type}
+
+onChange={handleChange}
+
+className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700"
+
+>
+
+
+<option value="SELL">
+
+For Sale
+
+</option>
+
+
+<option value="RENT">
+
+For Rent
+
+</option>
+
+
+</select>
+
+</div>
 
           {/* SIZE */}
 
@@ -205,44 +364,66 @@ export default function AddProductPage() {
             />
 
           </div>
+{/* SALE PRICE - ONLY FOR SELL PRODUCTS */}
+          {formData.type === "SELL" && (
 
-          {/* SALE PRICE */}
+<div>
 
-          <div>
+<label className="block mb-2 text-sm text-zinc-300">
 
-            <label className="block mb-2 text-sm text-zinc-300">
-              Sale Price
-            </label>
+Sale Price
 
-            <input
-              type="number"
-              name="salePrice"
-              placeholder="4500"
-              value={formData.salePrice}
-              onChange={handleChange}
-              className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white outline-none focus:border-white"
-            />
+</label>
 
-          </div>
+<input
 
-          {/* RENTAL PRICE */}
+type="number"
 
-          <div>
+name="salePrice"
 
-            <label className="block mb-2 text-sm text-zinc-300">
-              Rental Price
-            </label>
+placeholder="4500"
 
-            <input
-              type="number"
-              name="rentalPrice"
-              placeholder="500"
-              value={formData.rentalPrice}
-              onChange={handleChange}
-              className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white outline-none focus:border-white"
-            />
+value={formData.salePrice}
 
-          </div>
+onChange={handleChange}
+
+className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white"
+
+/>
+
+</div>
+
+)}
+{/* RENTAL PRICE - ONLY FOR RENT PRODUCTS */}
+{formData.type === "RENT" && (
+
+<div>
+
+<label className="block mb-2 text-sm text-zinc-300">
+
+Rental Price
+
+</label>
+
+<input
+
+type="number"
+
+name="rentalPrice"
+
+placeholder="500"
+
+value={formData.rentalPrice}
+
+onChange={handleChange}
+
+className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white"
+
+/>
+
+</div>
+
+)}
 
           {/* STOCK */}
 
@@ -335,12 +516,17 @@ export default function AddProductPage() {
 
         {/* BUTTON */}
 
-        <button
-          type="submit"
-          className="mt-8 bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition"
-        >
-          Add Product
-        </button>
+      <button
+
+type="submit"
+
+className="mt-8 w-full bg-white text-black py-3 rounded-xl font-semibold hover:opacity-90"
+
+>
+
+Add Product
+
+</button>
 
       </form>
 

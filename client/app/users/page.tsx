@@ -1,32 +1,97 @@
+"use client";
+import Link from "next/link";
 import DashboardLayout from "@/layouts/DashboardLayout";
-
-const users = [
-  {
-    id: 1,
-    name: "Ahmed",
-    email: "ahmed@test.com",
-    role: "Admin",
-    status: "Active",
-  },
-
-  {
-    id: 2,
-    name: "Mohamed",
-    email: "mohamed@test.com",
-    role: "Manager",
-    status: "Active",
-  },
-
-  {
-    id: 3,
-    name: "Ali",
-    email: "ali@test.com",
-    role: "Cashier",
-    status: "Inactive",
-  },
-];
-
+import { useEffect, useState } from "react";
+import api from "@/services/api";
+import { useRouter } from "next/navigation";
 export default function UsersPage() {
+const router = useRouter();
+  const [users, setUsers] = useState<any[]>([]);
+  const [authorized, setAuthorized] =
+  useState(false);
+  const [loading, setLoading] = useState(true);
+  const deleteUser = async (id: number) => {
+
+  const confirmDelete =
+    confirm("Delete this user?");
+
+  if (!confirmDelete) return;
+
+  try {
+
+    await api.delete(`/users/${id}`);
+
+    setUsers(
+      users.filter(
+        (user) => user.id !== id
+      )
+    );
+
+  } catch (error) {
+
+    console.log(error);
+
+    alert("Failed To Delete User");
+
+  }
+
+};
+const fetchUsers = async () => {
+
+  try {
+
+    const response =
+      await api.get("/users");
+
+    setUsers(response.data);
+
+  } catch (error) {
+
+    console.log(error);
+
+  } finally {
+
+    setLoading(false);
+
+  }
+
+};
+
+useEffect(() => {
+  const role =
+  localStorage.getItem("role");
+
+if (role !== "Admin") {
+
+  router.push("/dashboard");
+
+  return;
+
+}
+
+setAuthorized(true);
+
+  fetchUsers();
+
+}, []);
+if (loading) {
+if (!authorized) {
+
+  return null;
+
+}
+  return (
+
+    <DashboardLayout>
+
+      <p>Loading Users...</p>
+
+    </DashboardLayout>
+
+  );
+
+}
+
 
   return (
 
@@ -48,9 +113,12 @@ export default function UsersPage() {
 
         </div>
 
-        <button className="bg-white text-black px-5 py-3 rounded-xl font-semibold hover:opacity-90 transition">
-          Add User
-        </button>
+        <Link
+  href="/users/add"
+  className="bg-white text-black px-5 py-3 rounded-xl font-semibold"
+>
+  Add User
+</Link>
 
       </div>
 
@@ -90,7 +158,7 @@ export default function UsersPage() {
 
           <tbody>
 
-            {users.map((user) => (
+            {users.map((user: any) => (
 
               <tr
                 key={user.id}
@@ -127,13 +195,21 @@ export default function UsersPage() {
 
                   <div className="flex gap-3">
 
-                    <button className="px-4 py-2 rounded-lg bg-blue-500 text-white">
-                      Edit
-                    </button>
+                    <Link
+  href={`/users/edit/${user.id}`}
+  className="px-4 py-2 rounded-lg bg-blue-500 text-white"
+>
+  Edit
+</Link>
 
-                    <button className="px-4 py-2 rounded-lg bg-red-500 text-white">
-                      Delete
-                    </button>
+                    <button
+  onClick={() =>
+    deleteUser(user.id)
+  }
+  className="px-4 py-2 rounded-lg bg-red-500 text-white"
+>
+  Delete
+</button>
 
                   </div>
 

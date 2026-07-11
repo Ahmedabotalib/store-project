@@ -3,12 +3,19 @@
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { useEffect, useState } from "react";
 import api from "@/services/api";
+import Link from "next/link";
 
 export default function ProductsPage() {
+  const [search, setSearch] = useState("");
+const [role, setRole] = useState("");
+
+const [statusFilter, setStatusFilter] =
+  useState("All");
+const [typeFilter,setTypeFilter]=
+useState("All");
 
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
 
   const fetchProducts = async () => {
 
@@ -16,11 +23,9 @@ export default function ProductsPage() {
 
       setLoading(true);
 
-      const token = localStorage.getItem("token");
+      const response = await api.get("/products");
 
-     const response = await api.get("/products");
-
-const data = response.data;
+      const data = response.data;
 
       console.log("Products API Response:", data);
 
@@ -44,11 +49,103 @@ const data = response.data;
 
   };
 
+  const handleDelete = async (id: number) => {
+
+    const confirmDelete = confirm(
+      "Are you sure you want to delete this product?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+
+      await api.delete(`/products/${id}`);
+
+      alert("Product Deleted Successfully");
+
+      fetchProducts();
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert("Delete Failed");
+
+    }
+
+  };
+
   useEffect(() => {
 
-    fetchProducts();
+  const userRole =
+    localStorage.getItem("role");
 
-  }, []);
+  if (userRole) {
+
+    setRole(userRole);
+
+  }
+
+  fetchProducts();
+
+}, []);
+ const filteredProducts = products.filter(
+
+(product)=>{
+
+
+const matchesSearch=
+
+product.name
+
+.toLowerCase()
+
+.includes(
+
+search.toLowerCase()
+
+);
+
+
+
+const matchesStatus=
+
+statusFilter==="All"
+
+? true
+
+: product.status===statusFilter;
+
+
+
+const matchesType=
+
+typeFilter==="All"
+
+? true
+
+: product.type===typeFilter;
+
+
+
+return (
+
+matchesSearch
+
+&&
+
+matchesStatus
+
+&&
+
+matchesType
+
+);
+
+
+}
+
+);
 
   if (loading) {
 
@@ -84,14 +181,60 @@ const data = response.data;
 
         </div>
 
-        <a
-          href="/products/add"
-          className="bg-white text-black px-5 py-3 rounded-xl font-semibold hover:opacity-90 transition"
-        >
-          Add Product
-        </a>
+        {(role === "Admin" ||
+  role === "Manager") && (
+
+  <a
+    href="/products/add"
+    className="bg-white text-black px-5 py-3 rounded-xl font-semibold hover:opacity-90 transition"
+  >
+    Add Product
+  </a>
+
+)}
 
       </div>
+      <div className="flex gap-4 mb-6">
+
+  <input
+    type="text"
+    placeholder="Search Product..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    className="bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 w-80"
+  />
+
+  <select
+    value={statusFilter}
+    onChange={(e) => setStatusFilter(e.target.value)}
+    className="bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3"
+  >
+    <option value="All">All</option>
+    <option value="Available">Available</option>
+    <option value="Rented">Rented</option>
+    <option value="Maintenance">Maintenance</option>
+  </select>
+  <select
+value={typeFilter}
+onChange={(e)=>setTypeFilter(e.target.value)}
+className="bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3"
+>
+
+<option value="All">
+All Types
+</option>
+
+<option value="SELL">
+For Sale
+</option>
+
+<option value="RENT">
+For Rent
+</option>
+
+</select>
+
+</div>
 
       <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800">
 
@@ -118,11 +261,15 @@ const data = response.data;
               </th>
 
               <th className="text-left p-5">
-                Rental Price
+                 Price
               </th>
 
               <th className="text-left p-5">
                 Stock
+              </th>
+
+              <th className="text-left p-5">
+                Actions
               </th>
 
             </tr>
@@ -131,12 +278,12 @@ const data = response.data;
 
           <tbody>
 
-            {products.length === 0 ? (
+            {filteredProducts.length === 0 ? (
 
               <tr>
 
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="p-5 text-center text-zinc-400"
                 >
                   No Products Found
@@ -146,7 +293,7 @@ const data = response.data;
 
             ) : (
 
-              products.map((product) => (
+              filteredProducts.map((product) => (
 
                 <tr
                   key={product.id}
@@ -157,7 +304,15 @@ const data = response.data;
 
                     <div className="flex items-center gap-4">
 
-                      <div className="w-14 h-14 rounded-xl bg-zinc-700"></div>
+                      {product.image ? (
+  <img
+    src={`http://localhost:5000/uploads/${product.image}`}
+    alt={product.name}
+    className="w-14 h-14 rounded-xl object-cover"
+  />
+) : (
+  <div className="w-14 h-14 rounded-xl bg-zinc-700"></div>
+)}
 
                       <div>
 
@@ -197,13 +352,65 @@ const data = response.data;
 
                   </td>
 
-                  <td className="p-5">
-                    {product.rentalPrice} EGP
-                  </td>
+                <td className="p-5">
+
+{product.type === "SELL" ? (
+
+<span className="text-green-400 font-semibold">
+
+Sale :
+{product.salePrice} EGP
+
+</span>
+
+) : (
+
+<span className="text-blue-400 font-semibold">
+
+Rent :
+{product.rentalPrice} EGP
+
+</span>
+
+)}
+
+</td>
 
                   <td className="p-5">
                     {product.stock}
                   </td>
+
+                <td className="p-5">
+                  
+
+  <div className="flex gap-2">
+
+   {(role === "Admin" ||
+  role === "Manager") && (
+
+  <Link
+    href={`/products/edit/${product.id}`}
+    className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white transition"
+  >
+    Edit
+  </Link>
+
+)}
+
+  {role === "Admin" && (
+
+  <button
+    onClick={() => handleDelete(product.id)}
+    className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-white transition"
+  >
+    Delete
+  </button>
+
+)}
+
+  </div>
+
+</td>
 
                 </tr>
 
